@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 #Grabs the date of the next Saturday from passed arguement
 sab_date = sys.argv[1]
 
-sab_date = datetime.strptime(sab_date, "%m %#d %Y")
-sab_date = sab_date.strftime("%B %#d")
+sab_date = datetime.strptime(sab_date, "%m %d %Y")
+sab_date = sab_date.strftime("%B %d")
 
 #https://m.egwwritings.org/en/folders/1227
 with open("Scripts/MD_URL.url", "r") as file:
