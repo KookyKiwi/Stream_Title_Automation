@@ -27,7 +27,7 @@ headers = {
 response = requests.get(url, headers=headers)
 if response.status_code == 404:
 	print(response.status_code)
-    sys.exit(1)
+	sys.exit(1)
 
 html = response.text
 soup = BeautifulSoup(html, "html.parser")
