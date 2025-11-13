@@ -9,9 +9,22 @@ setlocal enabledelayedexpansion
 set i=0
 for /f "usebackq delims=" %%A in (`python3 Scripts\SSL_Title_Finder.py`) do (
     set /a i+=1
-    if !i! equ 1 set "SAB_DATE=%%A"
-    if !i! equ 2 set "LESSON_NUM=%%A"
-    if !i! equ 3 set "LESSON_TITLE=%%A"
+	if !i! equ 1 set "STATUS_CODE=%%A"
+    if !i! equ 2 set "SAB_DATE=%%A"
+    if !i! equ 3 set "LESSON_NUM=%%A"
+    if !i! equ 4 set "LESSON_TITLE=%%A"
+)
+
+:: Checks if page exists or is working
+if /I "%STATUS_CODE%"=="404" (
+	echo Couldn't find sabbath school page :(
+	pause
+)
+
+if /I "%STATUS_CODE%" neq 200 (
+	echo There is a problem for the sabbath school page :(
+	pause
+	set "NO_SLL=no page"
 )
 
 :: Split by space
@@ -23,6 +36,18 @@ set "DD=%SAB_DATE:~8,2%"
 :: Pipes month and day into morning devotional title finder and outputs the morning devotional for that date
 for /f "delims=" %%i in ('python3 Scripts\MD_Title_Finder.py "%MM% %DD% %YYYY%"') do set "MD_TITLE=%%i"
 
+if /I "%MD_TITLE%"=="404" (
+	echo couldn't find morning devotional page :(
+	pause
+)
+
+if /I "%MD_TITLE%" neq 200 (
+	echo there is a problem for the morning devotional page :(
+	pause
+	set "NO_MD=no page"
+)
+
+if defined NO_MD if defined NO_SLL exit /b
 
 :: Map month numbers to short names
 if "%MM%"=="01" set "MON=Jan."
@@ -41,7 +66,7 @@ if "%MM%"=="12" set "MON=Dec."
 
 :: Sets the titles to variables
 set "MD=%MON% %DD% ^| Morning Devotional - "%MD_TITLE%""
-if /I "%DO_LESSON_NUM%"=="true" (
+if /I "%DO_LESSON_NUMBER%"=="true" (
     set "SSL=%MON% %DD% ^| Sabbath School Lesson #%LESSON_NUM% - "%LESSON_TITLE%""
 ) else (
     set "SSL=%MON% %DD% ^| Sabbath School - "%LESSON_TITLE%""
@@ -73,11 +98,12 @@ if defined FOUND_FILE (
     echo %MD%
     echo %SSL%
     echo %DS%
-) > %DESKTOP%\"%MM%.%DD% - Stream Titles.txt"
+) > "%DESKTOP%\%MM%.%DD% - Stream Titles.txt"
 
 :: TEST
 echo %MD%
 echo %SSL%
 echo %DS%
+
 
 pause
