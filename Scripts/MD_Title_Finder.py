@@ -25,8 +25,10 @@ headers = {
 
 # Grabs HTML from page
 response = requests.get(url, headers=headers)
-if response.status_code == 404:
+
+if response.status_code != 200:
 	print(response.status_code)
+	print(f"{response.status_code} Error: Morning Devotional page could not be loaded/found")
 	sys.exit(1)
 
 html = response.text
@@ -45,4 +47,5 @@ MD_Title = MD_Title.get_text(" ", strip=True)
 index = MD_Title.rfind(",")
 MD_Title = MD_Title[:index]
 
+print(response.status_code)
 print(MD_Title)

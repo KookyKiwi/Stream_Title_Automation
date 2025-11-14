@@ -1,3 +1,4 @@
+import sys
 import re
 import requests
 from datetime import datetime, date, timedelta
@@ -13,18 +14,19 @@ with open("Scripts/SSL_URL.url", "r") as file:
 while True:
 	# Browser-like User-Agent header to avoid blocking
 	headers = {
-    	"User-Agent": (
+    		"User-Agent": (
 			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
 			"AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
+            		"Chrome/120.0.0.0 Safari/537.36"
 		)
 	}
 
 	# Get the HTML of the page
 	response = requests.get(url, headers=headers)
-	if response.status_code == 404:
+	if response.status_code != 200:
 		print(response.status_code)
-		break
+		print(f"{response.status_code} Error: Sabbath School page could not be loaded/found")
+		sys.exit(1)
 	
 	html = response.text
 	soup = BeautifulSoup(html, "html.parser")
@@ -50,10 +52,9 @@ while True:
 	url = url[:index] + new_url
 
 # if the page does work then saves the url to the SSL url file
-if response.status_code == 200:
-	with open("Scripts/SSL_URL.url", "w") as file:
-		file.write(url)
-	print(response.status_code)
+with open("Scripts/SSL_URL.url", "w") as file:
+	file.write(url)
+
 
 # Find all elements that contain devotional titles
 # (Inspect the page to find the right tag/class!)
@@ -72,6 +73,7 @@ SSL_Num = int(lesson_match.group(1)) if lesson_match else None
 index = SSL.find("-")
 SSL_Title = SSL[index + 2:].strip() if index != -1 else "Unkown Title"
 
+print(response.status_code)
 print(Dev_date)
 print(int(SSL_Num))
 print(SSL_Title)
