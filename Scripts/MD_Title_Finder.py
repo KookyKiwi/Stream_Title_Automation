@@ -1,6 +1,11 @@
 import sys
 import re
-import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from datetime import datetime, date
 from bs4 import BeautifulSoup
 
@@ -9,43 +14,81 @@ sab_date = sys.argv[1]
 
 sab_date = datetime.strptime(sab_date, "%m %d %Y")
 sab_date = sab_date.strftime("%B %d")
+month = sab_date.split(" ")
+month_name = month[0]
 
 # https://m.egwwritings.org/en/folders/1227
 with open("Scripts/MD_URL.url", "r") as file:
-	url = file.read().strip()
+    url = file.read().strip()
 
-# Browser-like User-Agent header to avoid blocking
-headers = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    )
-}
+# Allows the browser to run headless and helps with performance
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--disable-gpu")
+options.add_argument("--window-size=1920,1080")
 
-# Grabs HTML from page
-response = requests.get(url, headers=headers)
+# Calls chrome broswer and opens webpage
+driver = webdriver.Chrome(options=options)
+driver.get(url)
 
-if response.status_code != 200:
-	print(response.status_code)
-	print(f"{response.status_code} Error: Morning Devotional page could not be loaded/found")
-	sys.exit(1)
+wait = WebDriverWait(driver, 500)
 
-html = response.text
+# Checks if page is loaded
+try:
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "ul.toc")))
+except TimeoutException:
+    print("Error: Page elements never appeared.")
+    driver.quit()
+    sys.exit(1)
+
+# Finds the button that is before the <a> tag containing the month
+xpath = (
+    f"//li[@class='has-children']/a"
+    f"[starts-with(translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), "
+    f"'{month_name.lower()}')]"
+    f"/preceding-sibling::span[@class='toggle-btn']"
+)
+
+
+toggle_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+
+# Clicks on button element and waits untill the content is loaded
+toggle_button.click()
+
+# XPath to the *UL* that gets filled after clicking
+month_ul_xpath = (
+    f"//li[@class='has-children']/a"
+    f"[starts-with(translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), "
+    f"'{month_name.lower()}')]"
+    f"/following-sibling::ul"
+)
+
+month_ul = driver.find_element(By.XPATH, month_ul_xpath)
+
+# Wait for THIS ul to fill up
+wait.until(lambda d: len(month_ul.find_elements(By.TAG_NAME, "li")) > 0)
+
+html = driver.page_source
+
+# Sets Bs4 parser to html and uses source html from Selenium
 soup = BeautifulSoup(html, "html.parser")
 
 # Finds html element with the date of the next Saturday
 MD_Title = soup.find("a", string=re.compile(sab_date, re.IGNORECASE))
 
 if not MD_Title:
-	print("Could not find title")
-	sys.exit(1)
+    print("Could not find title")
+    driver.quit()
+    sys.exit(1)
 
+# Gets text and cleans the format and any enters are turned into spaces
 MD_Title = MD_Title.get_text(" ", strip=True)
+
+driver.quit()
 
 # splits the text before the title and the date using the ","
 index = MD_Title.rfind(",")
 MD_Title = MD_Title[:index]
 
-print(response.status_code)
+print("200")
 print(MD_Title)

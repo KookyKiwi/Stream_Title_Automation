@@ -1,9 +1,23 @@
 @echo off
 
-:: Puts the lesson number in the sabbath school title if equal to TRUE
-set "DO_LESSON_NUMBER=TRUE"
-
 setlocal enabledelayedexpansion
+
+:: Sets arguements
+for /f "usebackq tokens=1,2 delims==" %%A in ("arguments.txt") do (
+    set key=%%A
+    set val=%%B
+
+    :: Remove surrounding quotes from value
+    set val=!val:"=!
+
+    :: Set environment variable dynamically
+    set !key!=!val!
+)
+
+if /I "%DEBUG_MODE%" NEQ "true" (
+	powershell -WindowStyle Minimized -Command "Start-Sleep 0"
+)
+
 
 
 :: Gets the lesson number and the lesson name
@@ -21,6 +35,9 @@ for /f "usebackq delims=" %%A in (`python3 Scripts\SSL_Title_Finder.py`) do (
 if /I "%STATUS_CODE%" neq "200" (
 	echo %SAB_DATE%
 	set "NO_SLL=no page"
+	if /I "%DEBUG_MODE%"=="true" (
+		pause
+	)
 	goto :skip_date
 )
 
@@ -74,6 +91,9 @@ if /I "%STATUS_CODE%" neq "200" (
 	echo %MD_TITLE%
 	set "MD_TITLE="
 	set "NO_MD=no page"
+	if /I "%DEBUG_MODE%"=="true" (
+		pause
+	)
 ) 
 
 
@@ -101,7 +121,7 @@ for /f "delims=" %%f in ('dir /b "%DESKTOP%\*Stream Titles.txt" 2^>nul') do (
     goto :found
 )
 
-:: Dev log
+
 echo couldnt find %DESKTOP%\*Stream Titles.txt
 
 :found
@@ -133,10 +153,18 @@ if defined FOUND_FILE (
 
 :skip_file_creation
 
-:: TEST
+
+if /I "%OPEN_FILE_WHEN_OVER%"=="true" (
+	start "" "%DESKTOP%\%MM%.%DD% - Stream Titles.txt"
+)
+
+:: Shows Titles in debug mode
 echo %MD%
 echo %SSL%
 echo %DS%
 
+if /I "%DEBUG_MODE%"=="true" (
+    pause
+)
 
-pause
+

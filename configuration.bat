@@ -36,17 +36,22 @@ if %errorlevel% neq 0 (
 :: =====================================================
 ::  INSTALL REQUIRED PACKAGES
 :: =====================================================
-set "REQ_PACKAGES=requests beautifulsoup4"
+set "REQ_PACKAGES=requests beautifulsoup4 selenium webdriver-manager"
+
+echo Checking and installing required Python packages...
 for %%p in (%REQ_PACKAGES%) do (
     python -m pip show %%p >nul 2>&1
     if errorlevel 1 (
         echo Installing required package: %%p...
         python -m pip install %%p --quiet
+    ) else (
+        echo %%p is already installed.
     )
 )
+echo.
 
 echo.
-echo [✓] Python and required modules are ready.
+echo [v] Python and required modules are ready.
 echo.
 
 :: =====================================================
@@ -94,6 +99,6 @@ if defined ICON_PATH (
 )
 
 echo.
-echo [✓] Shortcut created on: %DESKTOP%
+echo [v] Shortcut created on: %DESKTOP%
 pause
 exit /b
