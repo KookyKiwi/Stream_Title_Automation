@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 sab_date = sys.argv[1]
 
 sab_date = datetime.strptime(sab_date, "%m %d %Y")
-sab_date = sab_date.strftime("%B %d")
+sab_date = sab_date.strftime("%B %#d")
 month = sab_date.split(" ")
 month_name = month[0]
 
